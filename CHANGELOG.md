@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`files transcript <file-id-or-url>`**: print the full transcript of an audio or video clip, where `files info` shows only a short preview. It downloads the WebVTT Slack links from the file's `vtt` field and prints the text, or the VTT itself with `--format vtt`. `--json` prints `{ id, name, title, locale, text, cues }` with each cue's `start`, `end` and `text`, and takes `--fields`. A file with no transcript, or one Slack has not finished, fails with `not_found` (#526)
+
 ## [0.19.1] - 2026-11-07
 
 ### Security

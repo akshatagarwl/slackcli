@@ -13,6 +13,7 @@ import { describeCommand, type CommandHelp } from '../lib/help.ts';
 import { confirmWrite } from './usergroups.ts';
 import { failCommand } from '../lib/command-errors.ts';
 import { CliError, InvalidInputError, NotFoundError } from '../lib/cli-errors.ts';
+import { fetchTranscript } from '../lib/transcript.ts';
 
 // --help content, kept apart from the command chains below (#324).
 const HELP = {
@@ -51,6 +52,25 @@ const HELP = {
     ],
     json: '{ id, name, title, mimetype, source, content } - source is plain_text or original.',
     notes: ['<file-id-or-url> takes a file ID (F...) or a Slack file URL.'],
+  },
+  transcript: {
+    summary: 'Print the full transcript of an audio/video clip',
+    fields: 'the transcript record',
+    description:
+      'Print the full transcript Slack made of an audio or video clip. ' +
+      '"files info" shows only a short preview of it; "files download" gets the media itself.',
+    examples: [
+      'slackcli files transcript F0123456789',
+      'slackcli files transcript F0123456789 --format vtt',
+      'slackcli files transcript https://acme.slack.com/files/U0123456789/F0123456789/audio_clip.m4a --json',
+    ],
+    json: '{ id, name, title, locale, text, cues[] } - each cue is { start, end, text }.',
+    notes: [
+      '<file-id-or-url> takes a file ID (F...) or a Slack file URL.',
+      '--format text (default) prints the words; --format vtt prints Slack\'s WebVTT with timestamps. ' +
+        'It cannot be combined with --json.',
+      'Fails with not_found when the file has no transcript or Slack has not finished it.',
+    ],
   },
   download: {
     summary: 'Download the original bytes of a Slack file',
@@ -103,6 +123,18 @@ function fileDownloadUrl(file: SlackFile): string {
   const url = file.url_private_download || file.url_private;
   if (!url) throw new Error('No download URL is available for this file');
   return url;
+}
+
+/** Validate `files transcript --format` before any Slack call. */
+export function transcriptFormat(value: string, json: boolean): 'text' | 'vtt' {
+  const format = value.trim().toLowerCase();
+  if (format !== 'text' && format !== 'vtt') {
+    throw new InvalidInputError(`Invalid --format: ${value}`, 'Use --format text or --format vtt.');
+  }
+  if (json && format === 'vtt') {
+    throw new InvalidInputError('--format vtt cannot be combined with --json', 'The JSON output already carries every cue with its timestamps.');
+  }
+  return format;
 }
 
 export function isTextFile(file: SlackFile): boolean {
@@ -306,6 +338,43 @@ export function createFilesCommand(): Command {
         process.stdout.write(result.content + (result.content.endsWith('\n') ? '' : '\n'));
       } catch (err: any) {
         failCommand(err, { json: options.json, spinner, context: 'Failed to read file' });
+      }
+    });
+
+  describeCommand(files.command('transcript'), HELP.transcript)
+    .argument('<file-id-or-url>', 'Slack file ID or URL')
+    .option('--format <format>', 'Output format: text or vtt', 'text')
+    .option('--workspace <id|name>', 'Workspace to use')
+    .option('--json', 'Output in JSON format', false)
+    .option(FIELDS_FLAG, FIELDS_DESCRIPTION)
+    .action(async (input, options) => {
+      const spinner = ora('Fetching file metadata...').start();
+
+      try {
+        const fields = fieldsOption(options);
+        const format = transcriptFormat(options.format, options.json);
+        const fileId = normalizeIdentifier(input, 'file', '<file-id-or-url>');
+        const client = await getAuthenticatedClient(options.workspace);
+        warnOnWorkspaceMismatch(client, workspaceOf(input));
+        const file = fileFromResponse(await client.getFileInfo(fileId));
+        const transcript = await fetchTranscript(client, file, (message) => { spinner.text = message; });
+
+        spinner.succeed(`Transcript: ${file.title || file.name || file.id}`);
+        if (options.json) {
+          writeJson(applyFields('files transcript', {
+            id: file.id,
+            name: file.name,
+            title: file.title,
+            locale: file.transcription?.locale,
+            text: transcript.text,
+            cues: transcript.cues,
+          }, fields));
+          return;
+        }
+        const output = format === 'vtt' ? transcript.vtt : transcript.text;
+        process.stdout.write(output + (output.endsWith('\n') ? '' : '\n'));
+      } catch (err: any) {
+        failCommand(err, { json: options.json, spinner, context: 'Failed to read transcript' });
       }
     });
 

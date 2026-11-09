@@ -375,6 +375,7 @@ slackcli canvas create --title Notes --markdown-file ./notes.md   # app token
 slackcli canvas edit F1234567890 --operation insert_at_end --markdown-file ./more.md
 slackcli files info F1234567890
 slackcli files read F1234567890              # email plain_text or original text
+slackcli files transcript F1234567890        # full transcript of an audio/video clip
 slackcli files download F1234567890 --output ./report.pdf
 slackcli update check                        # is there a newer version?
 slackcli update                              # install it

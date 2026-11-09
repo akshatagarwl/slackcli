@@ -3,7 +3,7 @@
 `slackcli files` inspects metadata, prints textual content, and downloads
 Slack-hosted files. Every command accepts a file ID or Slack file URL.
 
-`files info` and `files read` take [`--fields`](scripting.md#keeping-output-small---fields-and---limit) with
+`files info`, `files read` and `files transcript` take [`--fields`](scripting.md#keeping-output-small---fields-and---limit) with
 `--json` to print only the fields you name (`files info F1234567890 --json --fields id,name,size`).
 
 Reading files requires the `files:read` scope when you use standard
@@ -62,6 +62,49 @@ JSON output has this shape:
 ```
 
 `source` is `plain_text` or `original`.
+
+## `files transcript`
+
+```bash
+# Print the full transcript of an audio or video clip
+slackcli files transcript F1234567890
+
+# Print Slack's WebVTT, with a timestamp on every cue
+slackcli files transcript F1234567890 --format vtt
+
+# Return every cue and the joined text as JSON
+slackcli files transcript F1234567890 --json
+```
+
+Slack transcribes audio and video clips. `files info` shows only a short
+preview of the transcript (`transcription.preview`, with `has_more: true` when
+it is cut). This command downloads the complete transcript, the WebVTT file the
+file object links in its `vtt` field, and prints its text: every cue in order,
+joined with single spaces. `--format vtt` prints the VTT unchanged instead.
+
+The command fails with `not_found` when the file has no transcript (it is not
+a clip) or Slack has not finished it (`transcription.status` is `processing`,
+`failed`, …). Like `files read`, it reports `auth_failed` when Slack answers
+with its sign-in page.
+
+JSON output has this shape:
+
+```json
+{
+  "id": "F1234567890",
+  "name": "audio_clip.m4a",
+  "title": "Audio clip",
+  "locale": "en-US",
+  "text": "Morning all, quick update on the release: it moves to Thursday.",
+  "cues": [
+    { "start": "00:00:00.600", "end": "00:00:04.120", "text": "Morning all, quick update on" },
+    { "start": "00:00:04.120", "end": "00:00:08.900", "text": "the release: it moves to Thursday." }
+  ]
+}
+```
+
+`start` and `end` are the cue times exactly as the VTT writes them. `--json`
+always carries the cues, so `--format vtt` cannot be combined with it.
 
 ## `files download`
 

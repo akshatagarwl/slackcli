@@ -28,6 +28,7 @@ export const FIELDS_LIST_KEYS = {
   'emoji list': 'emoji',
   'files info': null,
   'files read': null,
+  'files transcript': null,
   'messages list-drafts': 'drafts',
   'messages list-scheduled': 'scheduled_messages',
   'saved list': 'items',

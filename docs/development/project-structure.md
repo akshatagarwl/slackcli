@@ -43,7 +43,7 @@ They hold no Slack API knowledge.
 | `auth.ts` | `login`, `login-browser`, `login-auto`, `whoami`, `list`, `set-default`, `remove`, `logout`, `extract-tokens`, `parse-curl` |
 | `canvas.ts` | `list`, `read`, `sections`, `create`, `edit` |
 | `conversations.ts` | `list`, `read`, `get`, `unread`, `mark-read`, `members list`/`add`/`remove`, `join`, `leave` |
-| `files.ts` | `info`, `read`, `download` |
+| `files.ts` | `info`, `read`, `transcript`, `download` |
 | `logs.ts` | `path`, `show`, `clear` |
 | `messages.ts` | `send`, `react`, `unreact`, `edit`, `delete`, `draft`, `list-drafts`, `send-draft`, `delete-draft`, `schedule`, `list-scheduled`, `delete-scheduled` |
 | `saved.ts` | `list`, `add`, `update`, `complete`, `reopen`, `remove` |
@@ -73,6 +73,7 @@ They hold no Slack API knowledge.
 | `canvas-sections.ts` | `canvas sections`'s lookup criteria (`buildSectionCriteria()`: `--type` / `--contains`, at least one, validated before any Slack call) and the section IDs read back from `canvases.sections.lookup` (`sectionsOf()`). |
 | `canvas-write.ts` | `canvas create` / `canvas edit`'s input: `readCanvasMarkdown()` (a file or `-` for stdin, bounded, with Slack's 1,048,576-character limit), `checkEditOptions()` / `buildCanvasChange()` (what each `canvases.edit` operation needs and allows, checked before any Slack call), and `isDestructiveOperation()` (`replace`/`delete` ask for confirmation). |
 | `canvas-read.ts` | `canvas read`'s work: resolves the canvas ID (explicit or a channel's canvas), downloads its HTML, and resolves `<@U…>` / `<#C…>` mentions. Expected failures throw `CanvasReadError` carrying their exit code. |
+| `transcript.ts` | `files transcript`'s work: checks the clip's `transcription` state, downloads the WebVTT its `vtt` field links, and parses it into cues (`parseVtt()`, no dependency) and plain text. |
 | `rate-limiter.ts` | Concurrency cap and minimum interval shared by every Slack API call. Logs waits at `debug`. |
 | `auth-errors.ts` | Pure classifier for Slack's five authentication codes (`invalid_auth`, `token_expired`, `token_revoked`, `not_authed`, `account_inactive`): the meaning and fix for a profile, the three-line message, the `SlackAuthError` that `SlackClient.request()` throws for them on both auth paths, and the separate wording for a token rejected during login. |
 | `retry.ts` | Pure retry policy for browser-auth calls: which failures are retried (429 always, 5xx/network errors for the `READ_METHODS` allowlist only), `Retry-After` parsing, backoff with jitter, and the attempt/wait caps. |
@@ -104,7 +105,7 @@ They hold no Slack API knowledge.
 
 Every shared interface: `AuthType`, `TokenType`, `StandardAuthConfig`,
 `BrowserAuthConfig`, `WorkspaceConfig`, `WorkspacesData`, `SlackChannel`,
-`SlackUser`, `SlackFile`, `SlackMessage`, `SlackDraft`, `DraftSummary`, `SlackScheduledMessage`, `ScheduledMessageSummary`, `SlackAuthTestResponse`, `SavedItem`, `SavedItemUpdate`,
+`SlackUser`, `SlackFile`, `SlackTranscription`, `SlackMessage`, `SlackDraft`, `DraftSummary`, `SlackScheduledMessage`, `ScheduledMessageSummary`, `SlackAuthTestResponse`, `SavedItem`, `SavedItemUpdate`,
 `SearchMatch`, `ChannelSearchResult`, `PeopleSearchResult`, `UnreadChannel`, `UnreadCursor`, `UnreadThread`, `UnreadThreads`, `UnreadSummary`,
 `SlackCanvas`, and the per-command option interfaces.
 

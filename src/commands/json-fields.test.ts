@@ -77,9 +77,13 @@ const ANSWERS: Record<string, unknown> = {
       size: 5,
       url_private: 'https://files.slack.com/files-pri/T0123456789-F0123456789/notes.txt',
       permalink: 'https://acme.slack.com/files/U0123456789/F0123456789/notes.txt',
+      transcription: { status: 'complete', locale: 'en-US', preview: { content: 'Hello', has_more: true } },
+      vtt: 'https://files.slack.com/files-tmb/T0123456789-F0123456789-abc123/file.vtt',
     },
   },
   downloadFile: '<h1>Notes</h1><p>hello</p>',
+  // What downloadFile answers for a `.vtt` URL (files transcript).
+  downloadVtt: 'WEBVTT\n\n00:00:00.000 --> 00:00:01.500\nHello there.\n',
   lookupCanvasSections: { ok: true, sections: [{ id: 'temp:C:abc123' }, { id: 'temp:C:def456' }] },
   listCanvases: { ok: true, files: [{ id: 'F0123456789', title: 'Notes', created: 1712345678, size: 5, permalink: 'p' }] },
   listEmoji: { ok: true, emoji: { party: 'https://emoji.example.com/party.png', fiesta: 'alias:party' } },
@@ -122,6 +126,9 @@ function stubClient(): unknown {
       if (prop === 'then') return undefined;
       if (prop === 'workspaceHost') return 'acme.slack.com';
       if (prop === 'authType') return 'browser';
+      if (prop === 'downloadFile') {
+        return async (url: string) => (url.endsWith('.vtt') ? ANSWERS.downloadVtt : ANSWERS.downloadFile);
+      }
       return async () => structuredClone(ANSWERS[prop as string] ?? { ok: true });
     },
   });
@@ -254,6 +261,7 @@ describe('--fields, in process', () => {
     'emoji get': ['party'],
     'files info': ['F0123456789'],
     'files read': ['F0123456789'],
+    'files transcript': ['F0123456789'],
     'search channels': ['deploy'],
     'search messages': ['deploy'],
     'search people': ['alice'],
@@ -277,6 +285,7 @@ describe('--fields, in process', () => {
     'emoji list': 'name',
     'files info': 'id',
     'files read': 'content',
+    'files transcript': 'text',
     'messages list-drafts': 'draft_id',
     'messages list-scheduled': 'scheduled_message_id',
     'saved list': 'type',

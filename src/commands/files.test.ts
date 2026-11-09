@@ -11,8 +11,10 @@ import {
   formatFileInfo,
   isAuthenticationResponse,
   isTextFile,
+  transcriptFormat,
   writeResponseToFile,
 } from './files.ts';
+import { InvalidInputError } from '../lib/cli-errors.ts';
 
 function subcommand(name: string) {
   return createFilesCommand().commands.find((command) => command.name() === name);
@@ -23,13 +25,14 @@ function longOptions(name: string): string[] {
 }
 
 describe('files command', () => {
-  it('exposes info, read, and download with one required file input', () => {
+  it('exposes info, read, transcript, and download with one required file input', () => {
     expect(createFilesCommand().commands.map((command) => command.name())).toEqual([
       'info',
       'read',
+      'transcript',
       'download',
     ]);
-    for (const name of ['info', 'read', 'download']) {
+    for (const name of ['info', 'read', 'transcript', 'download']) {
       expect(subcommand(name)?.registeredArguments.map((argument) => ({
         name: argument.name(),
         required: argument.required,
@@ -42,12 +45,32 @@ describe('files command', () => {
     expect(longOptions('read')).toContain('--json');
     expect(longOptions('read')).toContain('--raw');
     expect(longOptions('download')).toContain('--output');
+    expect(longOptions('transcript')).toEqual(['--format', '--workspace', '--json', '--fields']);
   });
 
   it('puts --yes on download, the only subcommand that writes to disk', () => {
     expect(longOptions('download')).toContain('--yes');
     expect(longOptions('info')).not.toContain('--yes');
     expect(longOptions('read')).not.toContain('--yes');
+    expect(longOptions('transcript')).not.toContain('--yes');
+  });
+});
+
+describe('transcriptFormat', () => {
+  it('accepts text and vtt, case-insensitively and trimmed', () => {
+    expect(transcriptFormat('text', false)).toBe('text');
+    expect(transcriptFormat(' VTT ', false)).toBe('vtt');
+    expect(transcriptFormat('text', true)).toBe('text');
+  });
+
+  it('rejects any other format as invalid input', () => {
+    for (const value of ['srt', '', 'json']) {
+      expect(() => transcriptFormat(value, false)).toThrow(InvalidInputError);
+    }
+  });
+
+  it('rejects --format vtt with --json, which would be two outputs', () => {
+    expect(() => transcriptFormat('vtt', true)).toThrow('--format vtt cannot be combined with --json');
   });
 });
 

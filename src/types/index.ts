@@ -109,6 +109,16 @@ export interface SlackFile {
   url_private_download?: string;
   permalink?: string;
   mode?: string;
+  /** Audio and video clips: Slack's transcription state and a short preview. */
+  transcription?: SlackTranscription;
+  /** Audio and video clips: URL of the full WebVTT transcript, once complete. */
+  vtt?: string;
+}
+
+export interface SlackTranscription {
+  status?: string;
+  locale?: string;
+  preview?: { content?: string; has_more?: boolean };
 }
 
 export interface SlackMessage {

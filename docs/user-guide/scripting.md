@@ -10,7 +10,7 @@ Every read command supports `--json`: `conversations list`, `conversations read`
 `search messages`, `search channels`,
 `search people`, `saved list`, `canvas list`, `canvas read`, `canvas sections`, `team info`,
 `usergroups list`, `usergroups read`, `emoji list`, `emoji get`, `files info`,
-`files read`, `users info`, `users list`, `messages list-drafts`,
+`files read`, `files transcript`, `users info`, `users list`, `messages list-drafts`,
 `messages list-scheduled`, `auth whoami`, `auth list`.
 
 The writing commands support it too — `messages send`, `messages edit`, `messages delete`,
@@ -123,6 +123,7 @@ Useful field sets, and what each command projects:
 | `canvas sections` | each of `sections` | `id` |
 | `files info` | the file record | `id,name,mimetype,size,permalink` |
 | `files read` | the file record | `id,name,content` |
+| `files transcript` | the transcript record | `id,locale,text` |
 | `emoji list` | each of `emoji` | `name,url` |
 | `emoji get` | the emoji record | `name,url` |
 | `team info` | the workspace record | `id,name,domain` |
